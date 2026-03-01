@@ -1,0 +1,39 @@
+# --- Carpeta General ---
+doom_proyecto/
+scenarios/
+recordings/
+
+# --- Archivos de Python (Cache y compilados) ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Entornos Virtuales ---
+venv/
+env/
+.env/
+.venv/
+
+# --- Archivos de Sistema y Editor (VS Code, Windows, Mac) ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Archivos del Proyecto VizDoom (Binarios pesados) ---
+*.zip
+*.wad
+*.pk3
+*.so
+*.dll
+*.exe
+
+# --- Archivos de Salida (Videos, Modelos entrenados, Logs) ---
+*.mp4
+*.mkv
+*.log
+runs/
+checkpoints/
+models/
+output/
