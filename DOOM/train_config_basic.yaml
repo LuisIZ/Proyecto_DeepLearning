@@ -1,0 +1,55 @@
+# train_config_basic.yaml  —  Fase 1: basic.wad
+# Optimizado para: WSL2 + GTX 1660 Ti 6 GB + Ryzen 7 3750H + 16 GB RAM
+#
+# Objetivo de esta fase:
+#   Un solo enemigo en una sala simple.
+#   El modelo aprende el ciclo: VER enemigo → GIRAR → DISPARAR.
+#   Los pesos luego se transfieren a la fase 2 (defend_the_center).
+
+scenario:
+  doom_scenario_path: "scenarios/basic.wad"
+  doom_map: "map01"
+  doom_skill: 1           # I'm Too Young To Die: enemigo lento → más fácil aprender
+  episode_timeout_tics: 2100
+  episode_start_tics: 10
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false
+  labels_buffer_enabled: false
+  audio_enabled: false
+
+controls:
+  buttons:
+    - MOVE_FORWARD
+    - MOVE_BACKWARD
+    - MOVE_LEFT
+    - MOVE_RIGHT
+    - TURN_LEFT
+    - TURN_RIGHT
+    - ATTACK
+    - USE
+    - SPEED
+
+  game_variables:
+    - HEALTH
+    - ARMOR
+    - KILLCOUNT
+    - AMMO2
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35
+
+reward:
+  living_reward: 0.0
+  death_penalty: 0.0

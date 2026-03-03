@@ -1,0 +1,71 @@
+# train_config_corridor.yaml  —  Fine-tuning: deadly_corridor.wad
+# ================================================================
+# ESCENARIO 2 DE COMPETENCIA
+#
+# Particularidades críticas:
+#   - Pasillo lineal: el agente DEBE avanzar para encontrar enemigos
+#   - doom_skill: 3 (la RÚBRICA especifica 3, el cfg original dice 5)
+#   - Solo HEALTH en game vars del cfg original → forzamos KILLCOUNT
+#   - death_penalty: 100 en el cfg → el juego ya penaliza morir fuerte
+#   - forward_bonus aumentado para forzar navegación del pasillo
+#
+# RUBRICA:
+#   1 kill = nota 6
+#   2+ kills + rank 10-6 = nota 7
+#   2+ kills + rank 5-1  = nota 8
+
+scenario:
+  doom_scenario_path: "scenarios/deadly_corridor.wad"
+  doom_map: "map01"
+  doom_skill: 3              # Rubrica especifica 3 (NO usar el 5 del cfg)
+  episode_timeout_tics: 2100 # Igual que cfg original (~60 segundos)
+  episode_start_tics: 10
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false (regla del proyecto)
+  labels_buffer_enabled: false       # OBLIGATORIO false (regla del proyecto)
+  audio_enabled: false
+
+controls:
+  # Los 7 botones del cfg oficial (sin USE ni SPEED que no aplican aquí)
+  buttons:
+    - MOVE_LEFT
+    - MOVE_RIGHT
+    - ATTACK
+    - MOVE_FORWARD
+    - MOVE_BACKWARD
+    - TURN_LEFT
+    - TURN_RIGHT
+
+  # KILLCOUNT forzado — el cfg original solo tiene HEALTH
+  game_variables:
+    - HEALTH
+    - KILLCOUNT
+
+rewards:
+  # CLAVE PARA DEADLY CORRIDOR:
+  # El agente debe avanzar por el pasillo. Sin forward_bonus alto
+  # aprenderá a quedarse al inicio del pasillo sin encontrar enemigos.
+  kill_reward: 200.0          # +200 por kill
+  health_penalty: 0.1         # -0.1 por HP perdido (Reducido de 1.5 para incentivar agresividad)
+  armor_penalty: 0.5          # -0.5 por armor (no hay armor en este mapa)
+  death_penalty: 50.0         # -50 extra nuestro (el cfg ya añade 100 del motor)
+  inactivity_penalty: 0.2     # -0.2 por paso sin acción
+  forward_bonus: 0.2          # ← MUY IMPORTANTE: Aumentado (antes 0.05) para ser muy agresivos
+                               #   Fuerza al agente a avanzar por el pasillo
+  time_penalty: 0.01          # -0.01 por tic
+  backward_penalty: 0.02      # Pequeña penalización por retroceder
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

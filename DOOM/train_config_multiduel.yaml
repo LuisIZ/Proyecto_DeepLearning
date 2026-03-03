@@ -1,0 +1,84 @@
+# train_config_multiduel.yaml  —  Fine-tuning: multi_duel.wad
+# ================================================================
+# PROBABILIDAD COMO ESCENARIO 4-5: ⭐⭐⭐⭐
+#
+# MECÁNICA:
+#   Duelos múltiples consecutivos. El agente enfrenta un enemigo a la vez
+#   en arenas pequeñas. doom_skill = 5 (Ultra-Violence, el más alto) →
+#   los enemigos son más rápidos, más agresivos y hacen más daño.
+#   Sin timeout definido en el cfg → el episodio termina por muerte
+#   o por completar todos los duelos.
+#
+# BOTONES DEL CFG OFICIAL: MOVE_LEFT, MOVE_RIGHT, ATTACK (3)
+#   Índices 2, 3, 6 en nuestro vector de 9 → transferencia directa.
+#   Sin giro → el agente solo puede esquivar lateralmente y disparar.
+#   Esto lo hace único: la estrategia óptima es strafear (movimiento
+#   lateral) mientras dispara, no girar.
+#
+# DIFICULTAD EXTRA vs OTROS ESCENARIOS:
+#   - Skill 5: enemigos hacen 2x daño que en skill 3
+#   - Sin TURN: el agente no puede apuntar girando, solo strafea
+#   - Duelos múltiples: el agente debe ganar varias veces seguidas
+#
+# REWARD SHAPING ESPECIAL:
+#   health_penalty aumentado a 2.5 (skill 5 → el daño recibido es señal
+#   fuerte de que algo va mal). death_penalty a 100 (duelos — morir es
+#   perder el duelo completo).
+#
+# COMANDO DE ENTRENAMIENTO:
+#   python3 train.py --phase multiduel \
+#     --resume ./models/best_corridor/best_model.zip \
+#     --steps-multiduel 500000 \
+#     2>&1 | tee "logs_$(date +%Y%m%d_%H%M)_multiduel.txt"
+
+scenario:
+  doom_scenario_path: "scenarios/multi_duel.wad"
+  doom_map: "map01"
+  doom_skill: 5              # Ultra-Violence — igual al cfg oficial (el más duro)
+  episode_timeout_tics: 2100 # No definido en cfg → usamos 2100 como fallback
+  episode_start_tics: 10
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false
+  labels_buffer_enabled: false       # OBLIGATORIO false
+  audio_enabled: false
+
+controls:
+  # 9 botones — MOVE_LEFT (2), MOVE_RIGHT (3), ATTACK (6) son activos
+  # Sin TURN_LEFT/TURN_RIGHT — el combate es por strafeo lateral
+  buttons:
+    - MOVE_LEFT       # idx 0 ✅ activo — strafeo izquierda
+    - MOVE_RIGHT      # idx 1 ✅ activo — strafeo derecha
+    - ATTACK          # idx 2 ✅ activo
+    - MOVE_FORWARD    # idx 3 — no-op en multi_duel
+    - MOVE_BACKWARD   # idx 4 — no-op
+    - TURN_LEFT       # idx 5 — no-op (sin giro en multi_duel)
+    - TURN_RIGHT      # idx 6 — no-op
+
+  game_variables:
+    - HEALTH
+    - KILLCOUNT        # no está en el cfg — forzado para reward
+
+rewards:
+  kill_reward: 200.0
+  health_penalty: 2.5      # Aumentado: skill 5 hace más daño → señal más fuerte
+  armor_penalty: 0.5
+  death_penalty: 100.0     # Aumentado: morir en un duelo = perder todo el episodio
+  inactivity_penalty: 0.3  # Alta: no moverse en un duelo es letal
+  forward_bonus: 0.0       # Sin MOVE_FORWARD activo
+  backward_penalty: 0.0
+  time_penalty: 0.01
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

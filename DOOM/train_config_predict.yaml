@@ -1,0 +1,93 @@
+# train_config_predict.yaml  —  Fine-tuning: predict_position.wad
+# ================================================================
+# PROBABILIDAD COMO ESCENARIO 3-4: ⭐⭐⭐⭐⭐
+#
+# MECÁNICA (la más interesante pedagógicamente):
+#   El agente tiene un Rocket Launcher. El enemigo SE MUEVE de forma
+#   predecible (va y viene horizontalmente). Los cohetes viajan lento
+#   y tienen trayectoria recta → el agente debe PREDECIR la posición
+#   futura del enemigo y disparar donde VA A ESTAR, no donde está.
+#   Sin autoaim (+sv_noautoaim 1 en game_args).
+#
+#   Concepto de RL implícito: el agente debe aprender un modelo implícito
+#   del movimiento enemigo a partir de los frames visuales apilados.
+#   Frame stacking x4 es CRÍTICO aquí — sin él el agente no percibe
+#   la dirección ni velocidad del enemigo.
+#
+# BOTONES DEL CFG OFICIAL: TURN_LEFT, TURN_RIGHT, ATTACK (3)
+#   Exactamente los mismos 3 botones activos que defend_the_line.
+#   Índices 4, 5, 6 en nuestro vector de 9 → transferencia directa.
+#
+# DIFERENCIA CON ROCKET_BASIC:
+#   - rocket_basic: enemigo estático → apuntar es simple
+#   - predict_position: enemigo en movimiento → hay que liderar el disparo
+#   - Episodios igual de cortos (300 tics) pero skill 1 para compensar
+#
+# REWARD SHAPING ESPECIAL:
+#   kill_reward aumentado a 300 para reforzar fuertemente los impactos
+#   (son más difíciles de conseguir que en rocket_basic).
+#   time_penalty aumentado a 0.02 para crear urgencia en episodios cortos.
+#
+# COMANDO DE ENTRENAMIENTO:
+#   python3 train.py --phase predict \
+#     --resume ./models/best_rocket/best_model.zip \
+#     --steps-predict 300000 \
+#     2>&1 | tee "logs_$(date +%Y%m%d_%H%M)_predict.txt"
+#
+#   NOTA: Usar best_rocket como base (mismo mapa conceptual: rocket + noautoaim)
+
+scenario:
+  doom_scenario_path: "scenarios/predict_position.wad"
+  doom_map: "map01"
+  doom_skill: 1              # I'm Too Young To Die — igual al cfg oficial
+  episode_timeout_tics: 300  # Igual al cfg oficial (episodios cortos)
+  episode_start_tics: 16     # Igual al cfg oficial (espera rocket launcher)
+  seed: 0
+  game_args: "+sv_noautoaim 1"  # Sin autoaim — igual al cfg oficial
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false
+  labels_buffer_enabled: false       # OBLIGATORIO false
+  audio_enabled: false
+
+controls:
+  # 9 botones — mismos índices que el modelo pre-entrenado
+  # TURN_LEFT (4), TURN_RIGHT (5), ATTACK (6) son los únicos activos
+  buttons:
+    - MOVE_FORWARD    # no-op
+    - MOVE_BACKWARD   # no-op
+    - MOVE_LEFT       # no-op
+    - MOVE_RIGHT      # no-op
+    - TURN_LEFT       # ✅ activo — apuntar
+    - TURN_RIGHT      # ✅ activo — apuntar
+    - ATTACK          # ✅ activo — disparar cohete
+    - USE             # no-op
+    - SPEED           # no-op
+
+  # El cfg oficial tiene lista vacía de game_variables
+  # Añadimos KILLCOUNT para poder dar reward por kill
+  game_variables:
+    - KILLCOUNT
+
+rewards:
+  kill_reward: 300.0       # Aumentado: hits son más difíciles (enemigo en movimiento)
+  health_penalty: 1.5
+  armor_penalty: 0.5
+  death_penalty: 50.0
+  inactivity_penalty: 0.3  # Mayor que otros: 300 tics es muy corto, no puede dudar
+  forward_bonus: 0.0
+  backward_penalty: 0.0
+  time_penalty: 0.02       # Mayor urgencia en episodios de 300 tics
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

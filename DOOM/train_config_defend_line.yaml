@@ -1,0 +1,80 @@
+# train_config_defend_line.yaml  —  Fine-tuning: defend_the_line.wad
+# ================================================================
+# PROBABILIDAD COMO ESCENARIO 3: ⭐⭐⭐⭐⭐
+#
+# MECÁNICA:
+#   El agente defiende una línea estática. Oleadas de enemigos avanzan
+#   hacia él desde el frente. A diferencia de deadly_corridor, el agente
+#   NO necesita avanzar — debe mantenerse en posición y disparar.
+#   Similar a defend_the_center pero con dirección frontal fija.
+#
+# BOTONES DEL CFG OFICIAL: TURN_LEFT, TURN_RIGHT, ATTACK (3)
+# FIX DE COMPATIBILIDAD: Usamos los mismos 9 botones que el modelo
+#   pre-entrenado. Los 6 extras son no-ops silenciosos. TURN_LEFT,
+#   TURN_RIGHT y ATTACK ya están en posiciones 4, 5 y 6 del vector →
+#   los pesos se transfieren directamente sin ningún cambio.
+#
+# REWARD SHAPING:
+#   - forward_bonus: 0.0 → el agente NO debe avanzar (pierde la línea)
+#   - backward_penalty: 0.05 → penaliza retroceder fuertemente
+#   - kill_reward: 200 (igual que siempre)
+#   - Agresividad de entropy (ent_coef): 0.02 para re-explorar el nuevo mapa
+#
+# COMANDO DE ENTRENAMIENTO:
+#   python3 train.py --phase defend_line \
+#     --resume ./models/best_corridor/best_model.zip \
+#     --steps-defend-line 400000 \
+#     2>&1 | tee "logs_$(date +%Y%m%d_%H%M)_defend_line.txt"
+
+scenario:
+  doom_scenario_path: "scenarios/defend_the_line.wad"
+  doom_map: "map01"
+  doom_skill: 3              # Hurt Me Plenty — igual al cfg oficial
+  episode_timeout_tics: 2100 # El cfg no define timeout → usamos 2100 (60s)
+  episode_start_tics: 10     # Igual al cfg oficial
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false (regla del proyecto)
+  labels_buffer_enabled: false       # OBLIGATORIO false (regla del proyecto)
+  audio_enabled: false
+
+controls:
+  # 9 botones en el mismo orden que el modelo pre-entrenado
+  # TURN_LEFT (idx 4), TURN_RIGHT (idx 5), ATTACK (idx 6) son activos
+  # Los otros 6 son no-ops en este escenario
+  buttons:
+    - MOVE_LEFT       # idx 0 — no-op en defend_line
+    - MOVE_RIGHT      # idx 1 — no-op en defend_line
+    - ATTACK          # idx 2 ✅ activo
+    - MOVE_FORWARD    # idx 3 — no-op
+    - MOVE_BACKWARD   # idx 4 — penalizado (backward_penalty)
+    - TURN_LEFT       # idx 5 ✅ activo
+    - TURN_RIGHT      # idx 6 ✅ activo
+
+  game_variables:
+    - HEALTH
+    - KILLCOUNT        # forzado — el cfg solo tiene AMMO2 y HEALTH
+
+rewards:
+  kill_reward: 200.0
+  health_penalty: 1.5
+  armor_penalty: 0.5
+  death_penalty: 50.0
+  inactivity_penalty: 0.2
+  forward_bonus: 0.0         # NO avanzar — la línea debe mantenerse
+  backward_penalty: 0.05     # Penalizar retroceder (pierde posición defensiva)
+  time_penalty: 0.01
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

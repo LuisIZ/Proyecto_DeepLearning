@@ -1,0 +1,83 @@
+# train_config_takecover.yaml  —  Fine-tuning: take_cover.wad
+# ================================================================
+# PROBABILIDAD COMO ESCENARIO INTERMEDIO: ⭐⭐
+#
+# MECÁNICA (completamente diferente a todos los demás):
+#   El agente NO tiene arma. Solo puede esquivar proyectiles moviéndose
+#   lateralmente. La nota se basa en CUÁNTO TIEMPO SOBREVIVE, no en kills.
+#   living_reward = 1 por cada tic vivo. skill = 4 (Death Incarnate).
+#   Sin timeout → el episodio termina cuando el agente muere.
+#
+#   Si aparece en la competencia, la métrica de evaluación cambia de
+#   kills a tiempo de supervivencia. Confirmar con el profesor cómo
+#   se adapta la rúbrica (kills = 0 siempre en este escenario).
+#
+# BOTONES DEL CFG OFICIAL: MOVE_LEFT, MOVE_RIGHT (solo 2 botones)
+#   Sin ATTACK. Sin giro. Solo esquivar.
+#   Índices 2, 3 en nuestro vector de 9 → compatibles.
+#
+# REWARD SHAPING COMPLETAMENTE DIFERENTE:
+#   - NO hay kill_reward (no hay kills posibles)
+#   - El reward viene del living_reward del motor (+1/tic) y de sobrevivir
+#   - health_penalty alta para que el agente aprenda a esquivar
+#   - death_penalty muy alta porque morir = fin del episodio
+#   - inactivity_penalty: el agente debe moverse continuamente para esquivar
+#
+# COMANDO DE ENTRENAMIENTO:
+#   python3 train.py --phase takecover \
+#     --resume ./models/best_corridor/best_model.zip \
+#     --steps-takecover 300000 \
+#     2>&1 | tee "logs_$(date +%Y%m%d_%H%M)_takecover.txt"
+
+scenario:
+  doom_scenario_path: "scenarios/take_cover.wad"
+  doom_map: "map01"
+  doom_skill: 4              # Death Incarnate — igual al cfg oficial
+  episode_timeout_tics: 2100 # Sin timeout en cfg → fallback de 60s
+  episode_start_tics: 10
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false
+  labels_buffer_enabled: false       # OBLIGATORIO false
+  audio_enabled: false
+
+controls:
+  # Solo MOVE_LEFT (2) y MOVE_RIGHT (3) son activos
+  # Sin ATTACK — este escenario no tiene combate
+  buttons:
+    - MOVE_LEFT       # idx 0 ✅ activo — esquivar izquierda
+    - MOVE_RIGHT      # idx 1 ✅ activo — esquivar derecha
+    - ATTACK          # idx 2 — no-op (sin arma en take_cover)
+    - MOVE_FORWARD    # idx 3 — no-op
+    - MOVE_BACKWARD   # idx 4 — no-op
+    - TURN_LEFT       # idx 5 — no-op
+    - TURN_RIGHT      # idx 6 — no-op
+
+  game_variables:
+    - HEALTH          # única variable — indicador de esquive exitoso
+
+rewards:
+  # ATENCIÓN: este escenario usa living_reward del motor (+1/tic)
+  # Nuestros rewards complementan esa señal del juego
+  kill_reward: 0.0          # Sin kills posibles
+  health_penalty: 3.0       # Alta: perder HP = no esquivó bien (señal fuerte)
+  armor_penalty: 1.0
+  death_penalty: 200.0      # Muy alta: morir termina el episodio completo
+  inactivity_penalty: 0.5   # Alta: quieto = blanco fácil
+  forward_bonus: 0.0        # Sin MOVE_FORWARD activo
+  backward_penalty: 0.0
+  time_penalty: 0.0         # Sin time_penalty: queremos que viva lo más posible
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

@@ -1,0 +1,76 @@
+# train_config_rocket.yaml  —  Fine-tuning: rocket_basic.wad
+# ============================================================
+# ESCENARIO 1 DE COMPETENCIA
+#
+# FIX CRÍTICO — Por qué usamos 9 botones si el escenario solo usa 3:
+#   El modelo pre-entrenado (phase2_dtc) tiene MultiBinary(9).
+#   SB3 lanza ValueError si el espacio de acciones no coincide exactamente.
+#   Solución: declarar los mismos 9 botones. El escenario rocket_basic
+#   simplemente IGNORA los botones que no soporta (son no-ops silenciosos).
+#   El agente aprende en pocos miles de pasos que solo LEFT/RIGHT/ATTACK
+#   producen efectos → las otras acciones caen a cero.
+#
+# OTROS DETALLES CRÍTICOS:
+#   - doom_map: map32  ← NO es map01, error fatal si se pone map01
+#   - episode_timeout: 300 tics (~9 segundos) → episodios MUY cortos
+#   - game_args: +sv_noautoaim 1 → sin autoaim, debe apuntar solo
+#   - KILLCOUNT forzado (el cfg oficial no lo incluye)
+#   - Rocket launcher: splash damage ayuda con puntería imprecisa
+#
+# RUBRICA: 1 kill = nota 5, 0 kills = nota 0
+
+scenario:
+  doom_scenario_path: "scenarios/rocket_basic.wad"
+  doom_map: "map32"          # CRÍTICO: map32, no map01
+  doom_skill: 2              # Rubrica especifica skill 2
+  episode_timeout_tics: 300  # Igual que cfg original (~9 segundos)
+  episode_start_tics: 14     # Espera a que se desenfunde el rocket launcher
+  seed: 0
+  game_args: "+sv_noautoaim 1"
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false (regla del proyecto)
+  labels_buffer_enabled: false       # OBLIGATORIO false (regla del proyecto)
+  audio_enabled: false
+
+controls:
+  # MISMO ORDEN que defend_the_center para que MultiBinary(9) coincida
+  # Los 6 botones extra son no-ops en rocket_basic (el escenario los ignora)
+  buttons:
+    - MOVE_FORWARD    # no-op en rocket_basic, pero necesario para MultiBinary(9)
+    - MOVE_BACKWARD   # no-op
+    - MOVE_LEFT       # ✅ activo
+    - MOVE_RIGHT      # ✅ activo
+    - TURN_LEFT       # no-op
+    - TURN_RIGHT      # no-op
+    - ATTACK          # ✅ activo
+    - USE             # no-op
+    - SPEED           # no-op
+
+  # KILLCOUNT forzado — el cfg original no lo incluye pero doom_gym.py lo necesita
+  game_variables:
+    - KILLCOUNT
+
+rewards:
+  kill_reward: 200.0
+  health_penalty: 1.5
+  armor_penalty: 0.5
+  ammo_penalty: 20.0       # Penalidad alta por disparar (el cohete splash hace facil gastar municion sin dar)
+  death_penalty: 50.0
+  inactivity_penalty: 0.2
+  forward_bonus: 0.0       # No tiene MOVE_FORWARD funcional en este escenario
+  backward_penalty: 0.0
+  time_penalty: 0.01       # Urgencia alta: solo 300 tics por episodio
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

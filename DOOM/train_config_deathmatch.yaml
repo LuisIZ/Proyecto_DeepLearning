@@ -1,0 +1,98 @@
+# train_config_deathmatch.yaml  —  Fine-tuning: deathmatch.wad
+# ================================================================
+# PROBABILIDAD COMO ESCENARIO 6 (FINAL): ⭐⭐⭐⭐
+#
+# ⚠️  ATENCIÓN — PROBLEMA DE ARQUITECTURA CRÍTICO ⚠️
+# ================================================================
+# El cfg oficial incluye botones DELTA (análogos) que son INCOMPATIBLES
+# con MultiBinary(9):
+#   LOOK_UP_DOWN_DELTA       → valor flotante continuo
+#   TURN_LEFT_RIGHT_DELTA    → valor flotante continuo
+#   MOVE_LEFT_RIGHT_DELTA    → valor flotante continuo
+#
+# OPCIONES:
+#
+# OPCIÓN A (RECOMENDADA): Ignorar los botones DELTA y usar solo los
+#   binarios del cfg. Esto sacrifica la capacidad de aim fino pero
+#   mantiene compatibilidad con MultiBinary y transfer learning.
+#   El agente aún puede girar con TURN_LEFT/TURN_RIGHT y moverse con
+#   los botones de movimiento binarios. Suficiente para kills básicas.
+#
+# OPCIÓN B (NO RECOMENDADA para el tiempo disponible): Usar MultiDiscrete
+#   o Box action space con SB3 SAC/TD3. Requeriría reentrenar desde
+#   cero (imposible con el tiempo disponible antes de la presentación).
+#
+# ESTE ARCHIVO IMPLEMENTA OPCIÓN A.
+# ================================================================
+#
+# MECÁNICA:
+#   Deathmatch completo. Múltiples armas (pistol/shotgun/chaingun/rocket/
+#   plasma/BFG). Episodios muy largos (4200 tics = ~2 minutos).
+#   El agente necesita navegar, encontrar enemigos, cambiar armas
+#   según la situación y sobrevivir.
+#
+# BOTONES ACTIVOS EN ESTA CONFIG (de los 20+ del cfg oficial):
+#   Los binarios que ya están en nuestro MultiBinary(9) original.
+#   SELECT_WEAPON y botones DELTA se omiten — no compatibles.
+#
+# COMANDO DE ENTRENAMIENTO:
+#   python3 train.py --phase deathmatch \
+#     --resume ./models/best_corridor/best_model.zip \
+#     --steps-deathmatch 1000000 \
+#     2>&1 | tee "logs_$(date +%Y%m%d_%H%M)_deathmatch.txt"
+#   NOTA: deathmatch necesita más pasos (1M+) por la complejidad del mapa
+
+scenario:
+  doom_scenario_path: "scenarios/deathmatch.wad"
+  doom_map: "map01"
+  doom_skill: 3              # Hurt Me Plenty — igual al cfg oficial
+  episode_timeout_tics: 4200 # Igual al cfg oficial (~2 minutos a 35Hz)
+  episode_start_tics: 14
+  seed: 0
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false
+  labels_buffer_enabled: false       # OBLIGATORIO false
+  audio_enabled: false
+
+controls:
+  # OPCIÓN A: Solo los 9 botones binarios originales
+  # Los botones DELTA y SELECT_WEAPON del cfg oficial se omiten
+  # El agente usa el arma con la que empieza y no cambia
+  buttons:
+    - MOVE_LEFT       # idx 0 ✅ activo — strafeo
+    - MOVE_RIGHT      # idx 1 ✅ activo — strafeo
+    - ATTACK          # idx 2 ✅ activo
+    - MOVE_FORWARD    # idx 3 ✅ activo — navegar mapa
+    - MOVE_BACKWARD   # idx 4 ✅ activo
+    - TURN_LEFT       # idx 5 ✅ activo — apuntar
+    - TURN_RIGHT      # idx 6 ✅ activo — apuntar
+
+  game_variables:
+    - HEALTH
+    - ARMOR
+    - KILLCOUNT
+    - SELECTED_WEAPON_AMMO
+
+rewards:
+  kill_reward: 200.0
+  health_penalty: 1.5
+  armor_penalty: 0.5
+  death_penalty: 50.0
+  inactivity_penalty: 0.1  # Menor: en deathmatch buscar armas/items es válido
+  forward_bonus: 0.02       # Mayor: el mapa es grande, hay que explorar
+  backward_penalty: 0.0
+  time_penalty: 0.005       # Menor que otros: episodios de 4200 tics son muy largos
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35

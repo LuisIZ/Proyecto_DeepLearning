@@ -1,0 +1,59 @@
+# train_config.yaml  —  Fase 2: defend_the_center
+# Optimizado para: WSL2 + GTX 1660 Ti 6 GB + Ryzen 7 3750H + 16 GB RAM
+#
+# ¿Por qué defend_the_center?
+#   Enemigos entran desde todos los ángulos constantemente →
+#   el modelo aprende a GIRAR y DISPARAR de forma continua →
+#   maximiza oportunidades de kill (métrica de la rúbrica).
+#
+# REGLA DEL PROYECTO — AUDITORÍA:
+#   depth_buffer_enabled  : false  ← NUNCA usar en inferencia
+#   labels_buffer_enabled : false  ← NUNCA usar en inferencia (posición enemigos)
+
+scenario:
+  doom_scenario_path: "scenarios/defend_the_center.wad"
+  doom_map: "map01"
+  doom_skill: 3           # Hurt Me Plenty: balance desafío / aprendizaje
+  episode_timeout_tics: 2100   # ~60 s a 35 Hz
+  episode_start_tics: 10
+  seed: 0                 # 0 = semilla aleatoria por episodio → más diversidad
+
+render:
+  visible_window: false
+  screen_resolution: "RES_160X120"   # pequeño = CNN rápida = más pasos/seg
+  screen_format: "RGB24"
+  render_hud: false
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false        # OBLIGATORIO false (regla del proyecto)
+  labels_buffer_enabled: false       # OBLIGATORIO false (regla del proyecto)
+  audio_enabled: false
+
+controls:
+  buttons:
+    - MOVE_FORWARD
+    - MOVE_BACKWARD
+    - MOVE_LEFT
+    - MOVE_RIGHT
+    - TURN_LEFT
+    - TURN_RIGHT
+    - ATTACK
+    - USE
+    - SPEED
+
+  game_variables:
+    - HEALTH
+    - ARMOR
+    - KILLCOUNT
+    - AMMO2
+
+timing:
+  frame_skip: 4
+  realtime_lock: false
+  target_hz: 35
+
+reward:
+  living_reward: 0.0
+  death_penalty: 0.0
