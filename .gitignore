@@ -14,6 +14,7 @@ venv/
 env/
 .env/
 .venv/
+DOOM/doom_env/
 
 # --- Archivos de Sistema y Editor (VS Code, Windows, Mac) ---
 .vscode/
@@ -22,7 +23,7 @@ env/
 Thumbs.db
 
 # --- Archivos del Proyecto VizDoom (Binarios pesados) ---
-*.zip
+# *.zip
 *.wad
 *.pk3
 *.so
@@ -30,10 +31,10 @@ Thumbs.db
 *.exe
 
 # --- Archivos de Salida (Videos, Modelos entrenados, Logs) ---
-*.mp4
+#*.mp4
 *.mkv
 *.log
 runs/
 checkpoints/
-models/
+# models/
 output/
