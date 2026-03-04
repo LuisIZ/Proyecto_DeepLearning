@@ -2,6 +2,7 @@
 doom_proyecto/
 scenarios/
 recordings/
+logs/
 
 # --- Archivos de Python (Cache y compilados) ---
 __pycache__/
@@ -23,7 +24,8 @@ DOOM/doom_env/
 Thumbs.db
 
 # --- Archivos del Proyecto VizDoom (Binarios pesados) ---
-# *.zip
+_vizdoom.ini
+*.zip
 *.wad
 *.pk3
 *.so
@@ -31,10 +33,11 @@ Thumbs.db
 *.exe
 
 # --- Archivos de Salida (Videos, Modelos entrenados, Logs) ---
-#*.mp4
+*.mp4
 *.mkv
 *.log
+*.txt
 runs/
 checkpoints/
-# models/
+models/
 output/

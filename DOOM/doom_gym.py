@@ -39,10 +39,10 @@ class DoomEnv(gym.Env):
         num_actions = len(self.controller.button_names)
         self.action_space = spaces.MultiBinary(num_actions)
 
-        res_str = self.controller.cfg.get("render", {}).get(
-            "screen_resolution", "RES_160X120"
-        )
-        h, w = self._parse_resolution(res_str)
+        rend_cfg = self.controller.cfg.get("render", {})
+        model_res_str = rend_cfg.get("model_resolution", rend_cfg.get("screen_resolution", "RES_160X120"))
+        
+        h, w = self._parse_resolution(model_res_str)
         self.obs_h, self.obs_w = h, w
 
         self.observation_space = spaces.Box(
