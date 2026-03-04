@@ -36,3 +36,7 @@ El entrenamiento sigue un esquema de **curriculum learning**: el agente empieza 
 - `doom_play.py` — Modo de juego humano con controles por teclado
 - `record_agent.py` — Graba episodios del agente en video MP4
 - `train_config_*.yaml` — Archivos de configuración para cada escenario (botones, rewards, resolución, etc.)
+
+## Herramientas de IA utilizadas
+
+Durante el desarrollo de este proyecto se utilizaron asistentes de inteligencia artificial como apoyo en distintas etapas del proceso, incluyendo la escritura y depuración de código, diseño de la arquitectura del sistema, optimización de hiperparámetros y redacción de documentación. Entre las herramientas empleadas se encuentran **Gemini**, **Claude** y el IDE **Antigravity**.
